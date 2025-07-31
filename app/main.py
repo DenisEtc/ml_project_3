@@ -1,15 +1,12 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import SessionLocal
-from app.models.user import User
-from app.models.ml_model import MLModel
-from app.models.ml_task import MLTask
-from app.models.transaction import Transaction
+from app.services.user_service import create_user, get_user
+from app.services.transaction_service import deposit, withdraw, get_transaction_history
+from app.models.user import UserRole
 
 app = FastAPI(title="ML Service API", version="1.0")
 
-
-# Dependency для сессии БД
 def get_db():
     db = SessionLocal()
     try:
@@ -17,43 +14,31 @@ def get_db():
     finally:
         db.close()
 
-
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
+@app.post("/users")
+def create_new_user(username: str, email: str, password: str, db: Session = Depends(get_db)):
+    user = create_user(db, username=username, email=email, password=password)
+    return {"id": user.id, "username": user.username, "balance": user.balance}
 
-@app.get("/users")
-def get_users(db: Session = Depends(get_db)):
-    """
-    Получить список всех пользователей.
-    """
-    users = db.query(User).all()
-    return users
+@app.post("/deposit")
+def deposit_money(user_id: int, amount: float, db: Session = Depends(get_db)):
+    try:
+        transaction = deposit(db, user_id, amount)
+        return {"status": "success", "transaction_id": transaction.id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-
-@app.get("/models")
-def get_models(db: Session = Depends(get_db)):
-    """
-    Получить список всех ML моделей.
-    """
-    models = db.query(MLModel).all()
-    return models
-
-
-@app.get("/tasks")
-def get_tasks(db: Session = Depends(get_db)):
-    """
-    Получить список всех ML задач.
-    """
-    tasks = db.query(MLTask).all()
-    return tasks
-
+@app.post("/withdraw")
+def withdraw_money(user_id: int, amount: float, db: Session = Depends(get_db)):
+    try:
+        transaction = withdraw(db, user_id, amount)
+        return {"status": "success", "transaction_id": transaction.id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/transactions")
-def get_transactions(db: Session = Depends(get_db)):
-    """
-    Получить список всех транзакций.
-    """
-    transactions = db.query(Transaction).all()
-    return transactions
+def get_user_transactions(user_id: int, db: Session = Depends(get_db)):
+    return get_transaction_history(db, user_id)
