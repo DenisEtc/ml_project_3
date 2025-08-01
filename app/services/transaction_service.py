@@ -10,7 +10,6 @@ def deposit(db: Session, user_id: int, amount: float):
     transaction = Transaction(user_id=user.id, amount=amount, type=TransactionType.DEPOSIT)
     db.add(transaction)
     db.commit()
-    db.refresh(transaction)
     return transaction
 
 def withdraw(db: Session, user_id: int, amount: float):
@@ -23,7 +22,6 @@ def withdraw(db: Session, user_id: int, amount: float):
     transaction = Transaction(user_id=user.id, amount=amount, type=TransactionType.WITHDRAW)
     db.add(transaction)
     db.commit()
-    db.refresh(transaction)
     return transaction
 
 def get_transaction_history(db: Session, user_id: int):
