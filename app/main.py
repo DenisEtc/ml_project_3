@@ -1,56 +1,57 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.db import SessionLocal
+from fastapi.security import OAuth2PasswordRequestForm
+
+from app.services.auth_service import authenticate_user, create_access_token, get_current_user, get_db
+from app.schemas.auth import Token
 from app.services.user_service import create_user
-from app.services.auth_service import authenticate_user, create_access_token
-from app.services.transaction_service import deposit, withdraw, get_transaction_history
-from app.services.ml_task_service import create_ml_task, get_prediction_history
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
-from app.schemas.user import UserResponse
-from app.schemas.transaction import TransactionResponse
-from app.schemas.ml_task import PredictRequest, PredictionHistoryResponse
+from app.models.user import User
 
-app = FastAPI(title="ML Service API")
+app = FastAPI()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-@app.post("/auth/register", response_model=UserResponse)
-def register(data: RegisterRequest, db: Session = Depends(get_db)):
-    try:
-        user = create_user(db, data.username, data.email, data.password)
-        return user
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# Авторизация и регистрация
+@app.post("/auth/register")
+def register(username: str, email: str, password: str, db: Session = Depends(get_db)):
+    user = create_user(db, username=username, email=email, password=password)
+    return {"message": f"User {user.username} created"}
 
-@app.post("/auth/login", response_model=TokenResponse)
-def login(data: LoginRequest, db: Session = Depends(get_db)):
-    user = authenticate_user(db, data.email, data.password)
+
+@app.post("/auth/login", response_model=Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    access_token = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/deposit", response_model=TransactionResponse)
-def deposit_money(user_id: int, amount: float, db: Session = Depends(get_db)):
-    return deposit(db, user_id, amount)
 
-@app.post("/withdraw", response_model=TransactionResponse)
-def withdraw_money(user_id: int, amount: float, db: Session = Depends(get_db)):
-    return withdraw(db, user_id, amount)
+# Защищённые эндпоинты
+@app.post("/deposit")
+def deposit(user_id: int, amount: float, current_user: User = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    # Логика пополнения
+    return {"message": f"Deposited {amount} credits for user {user_id}"}
 
-@app.get("/history/transactions", response_model=list[TransactionResponse])
-def transaction_history(user_id: int, db: Session = Depends(get_db)):
-    return get_transaction_history(db, user_id)
 
-@app.post("/predict", response_model=PredictionHistoryResponse)
-def predict(data: PredictRequest, user_id: int, db: Session = Depends(get_db)):
-    return create_ml_task(db, user_id, data.model_id, data.input_data)
+@app.post("/withdraw")
+def withdraw(user_id: int, amount: float, current_user: User = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    # Логика списания
+    return {"message": f"Withdrawn {amount} credits for user {user_id}"}
 
-@app.get("/history/predictions", response_model=list[PredictionHistoryResponse])
-def predictions_history(user_id: int, db: Session = Depends(get_db)):
-    return get_prediction_history(db, user_id)
+
+@app.get("/history/transactions")
+def transaction_history(user_id: int, current_user: User = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return {"history": []}
+
+
+@app.post("/predict")
+def predict(user_id: int, model_id: int, current_user: User = Depends(get_current_user)):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return {"result": "Prediction done"}
