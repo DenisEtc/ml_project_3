@@ -2,9 +2,13 @@ version: '3.9'
 
 services:
   app:
-    build: app
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ml_app
     env_file: .env
+    ports:
+      - "8000:8000"   # Пробрасываем порт для Swagger
     volumes:
       - ./app:/app/app
     depends_on:
@@ -27,8 +31,8 @@ services:
     container_name: ml_rabbit
     restart: on-failure
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - "15672:15672"  # RabbitMQ Management UI
+      - "5672:5672"    # Основной порт RabbitMQ
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
