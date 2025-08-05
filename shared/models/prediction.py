@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
-from app.db import Base
+from shared.db import Base
 
 class Prediction(Base):
     __tablename__ = "predictions"

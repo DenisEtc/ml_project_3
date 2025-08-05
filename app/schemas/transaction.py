@@ -1,16 +1,16 @@
 from pydantic import BaseModel
-from enum import Enum
 from datetime import datetime
 
-class TransactionType(str, Enum):
-    deposit = "deposit"
-    withdraw = "withdraw"
+class TransactionBase(BaseModel):
+    amount: float
+    type: str  # 'deposit' или 'withdraw'
 
-class TransactionResponse(BaseModel):
+class TransactionCreate(TransactionBase):
+    user_id: int
+
+class TransactionResponse(TransactionBase):
     id: int
     user_id: int
-    amount: float
-    type: TransactionType
     created_at: datetime
 
     class Config:

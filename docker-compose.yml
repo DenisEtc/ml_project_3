@@ -11,6 +11,7 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/app/app
+      - ./shared:/app/shared
     depends_on:
       - database
       - rabbitmq
@@ -31,8 +32,8 @@ services:
     container_name: ml_rabbit
     restart: on-failure
     ports:
-      - "15672:15672"  # Панель управления RabbitMQ
-      - "5672:5672"    # Основной порт
+      - "15672:15672" # Web UI
+      - "5672:5672"   # RabbitMQ protocol
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
@@ -48,46 +49,46 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # 4 отдельных воркера
+  # ✅ 4 воркера
   worker1:
     build:
       context: .
-      dockerfile: app/workers/Dockerfile
+      dockerfile: worker/Dockerfile
+    volumes:
+      - ./shared:/worker/shared
     depends_on:
       - rabbitmq
       - database
-    volumes:
-      - ./app:/worker/app
 
   worker2:
     build:
       context: .
-      dockerfile: app/workers/Dockerfile
+      dockerfile: worker/Dockerfile
+    volumes:
+      - ./shared:/worker/shared
     depends_on:
       - rabbitmq
       - database
-    volumes:
-      - ./app:/worker/app
 
   worker3:
     build:
       context: .
-      dockerfile: app/workers/Dockerfile
+      dockerfile: worker/Dockerfile
+    volumes:
+      - ./shared:/worker/shared
     depends_on:
       - rabbitmq
       - database
-    volumes:
-      - ./app:/worker/app
 
   worker4:
     build:
       context: .
-      dockerfile: app/workers/Dockerfile
+      dockerfile: worker/Dockerfile
+    volumes:
+      - ./shared:/worker/shared
     depends_on:
       - rabbitmq
       - database
-    volumes:
-      - ./app:/worker/app
 
 volumes:
   rabbitmq_data:
