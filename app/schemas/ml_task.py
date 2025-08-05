@@ -1,18 +1,7 @@
 from pydantic import BaseModel
-from typing import Any, Dict
-from datetime import datetime
+from typing import Dict
 
-class PredictRequest(BaseModel):
+class PredictionRequest(BaseModel):
+    user_id: int
     model_id: int
-    input_data: Dict[str, Any]
-
-class PredictionHistoryResponse(BaseModel):
-    id: int
-    model_id: int
-    input_data: Dict[str, Any]
-    result_data: Dict[str, Any] | None
-    status: str
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
+    input_data: Dict[str, float]

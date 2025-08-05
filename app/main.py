@@ -1,94 +1,57 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
-import pika
-import json
-
-from app.services.auth_service import (
-    authenticate_user,
-    create_access_token,
-    get_current_user,
-    get_db
-)
+from app.services.auth_service import authenticate_user, create_access_token, get_current_user, get_db
+from app.services.user_service import create_user, get_user_by_id
+from app.services.transaction_service import create_transaction, get_transactions
+from app.services.ml_task_service import send_task_to_queue
+from app.schemas.user import UserCreate, UserResponse
 from app.schemas.auth import Token
-from app.services.user_service import create_user
-from app.models.user import User
+from app.schemas.ml_task import PredictionRequest
+from app.schemas.transaction import TransactionResponse
+from typing import List
+from datetime import timedelta
 
 app = FastAPI(title="ML Service API")
 
-# имя контейнера из docker-compose.yml
-RABBITMQ_HOST = "rabbitmq"
+# --- AUTH ---
+@app.post("/auth/register", response_model=UserResponse)
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    user = create_user(db, user_data.username, user_data.email, user_data.password)
+    return user
 
-
-# Регистрация пользователя
-@app.post("/auth/register")
-def register(username: str, email: str, password: str, db: Session = Depends(get_db)):
-    user = create_user(db, username=username, email=email, password=password)
-    return {"message": f"User {user.username} created"}
-
-
-# Логин и выдача JWT токена
 @app.post("/auth/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
+def login(username: str, password: str, db: Session = Depends(get_db)):
+    user = authenticate_user(db, username, password)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    access_token = create_access_token(data={"sub": str(user.id)})
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=30))
     return {"access_token": access_token, "token_type": "bearer"}
 
+# --- USER INFO ---
+@app.get("/users/me", response_model=UserResponse)
+def read_users_me(current_user=Depends(get_current_user)):
+    return current_user
 
-# Пополнение баланса
-@app.post("/deposit")
-def deposit(user_id: int, amount: float, current_user: User = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    # TODO: логика изменения баланса
-    return {"message": f"Deposited {amount} credits for user {user_id}"}
+# --- BALANCE OPERATIONS ---
+@app.post("/deposit", response_model=TransactionResponse)
+def deposit(user_id: int, amount: float, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    transaction = create_transaction(db, user_id, amount, "deposit")
+    if not transaction:
+        raise HTTPException(status_code=400, detail="User not found")
+    return transaction
 
+@app.get("/transactions", response_model=List[TransactionResponse])
+def get_user_transactions(user_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    transactions = get_transactions(db, user_id)
+    return transactions
 
-# Списание средств
-@app.post("/withdraw")
-def withdraw(user_id: int, amount: float, current_user: User = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    # TODO: логика изменения баланса
-    return {"message": f"Withdrawn {amount} credits for user {user_id}"}
-
-
-# История транзакций
-@app.get("/history/transactions")
-def transaction_history(user_id: int, current_user: User = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return {"history": []}  # TODO: вернуть данные из БД
-
-
-# Эндпоинт для отправки задачи в очередь RabbitMQ
+# --- PREDICTION TASK ---
 @app.post("/predict")
-def predict(user_id: int, model_id: int, input_data: dict, current_user: User = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    # Подключаемся к RabbitMQ
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-    channel = connection.channel()
-    channel.queue_declare(queue="ml_tasks", durable=True)
-
-    message = json.dumps({
-        "user_id": user_id,
-        "model_id": model_id,
-        "input_data": input_data
-    })
-
-    channel.basic_publish(exchange="", routing_key="ml_tasks", body=message)
-    connection.close()
-
+def predict(request: PredictionRequest, current_user=Depends(get_current_user)):
+    task = {
+        "user_id": request.user_id,
+        "model_id": request.model_id,
+        "input_data": request.input_data
+    }
+    send_task_to_queue(task)
     return {"message": "Prediction task sent to queue"}
-
-
-# История предсказаний
-@app.get("/history/predictions")
-def prediction_history(user_id: int, current_user: User = Depends(get_current_user)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return {"predictions": []}  # TODO: вернуть данные из БД

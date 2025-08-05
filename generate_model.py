@@ -10,7 +10,7 @@ model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X, y)
 
 # Сохраняем модель в файл
-MODEL_PATH = "app/ml_model/heart_failure.pkl"
+MODEL_PATH = "shared/ml_model/heart_failure.pkl"
 with open(MODEL_PATH, "wb") as f:
     pickle.dump(model, f)
 
