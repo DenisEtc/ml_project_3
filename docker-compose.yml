@@ -48,49 +48,46 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # 4 отдельных воркера
   worker1:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "app/workers/worker.py"]
+      dockerfile: app/workers/Dockerfile
     depends_on:
       - rabbitmq
       - database
     volumes:
-      - ./app:/app/app
+      - ./app:/worker/app
 
   worker2:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "app/workers/worker.py"]
+      dockerfile: app/workers/Dockerfile
     depends_on:
       - rabbitmq
       - database
     volumes:
-      - ./app:/app/app
+      - ./app:/worker/app
 
   worker3:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "app/workers/worker.py"]
+      dockerfile: app/workers/Dockerfile
     depends_on:
       - rabbitmq
       - database
     volumes:
-      - ./app:/app/app
+      - ./app:/worker/app
 
   worker4:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: ["python", "app/workers/worker.py"]
+      dockerfile: app/workers/Dockerfile
     depends_on:
       - rabbitmq
       - database
     volumes:
-      - ./app:/app/app
+      - ./app:/worker/app
 
 volumes:
   rabbitmq_data:

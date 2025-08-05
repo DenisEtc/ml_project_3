@@ -5,12 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="85416139-1f6c-4f55-a9f4-497a87620510" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/ml_model/model_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/workers/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/workers/worker.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/generate_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/models/prediction.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/requirements_worker.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/workers/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/workers/worker.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/workers/worker.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -21,8 +20,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Dockerfile" />
         <option value="Python Script" />
+        <option value="Dockerfile" />
       </list>
     </option>
   </component>
@@ -45,7 +44,7 @@
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/rest-api&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/rabbitmq&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/denislavrinenko/Desktop/Studying/ML/3. ml_services/project&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
