@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   app:
     build:
@@ -7,11 +5,13 @@ services:
       dockerfile: Dockerfile
     container_name: ml_app
     env_file: .env
-    ports:
-      - "8000:8000"
+    environment:
+      PYTHONPATH: /app
     volumes:
       - ./app:/app/app
       - ./shared:/app/shared
+    ports:
+      - "8000:8000"
     depends_on:
       - database
       - rabbitmq
@@ -32,8 +32,8 @@ services:
     container_name: ml_rabbit
     restart: on-failure
     ports:
-      - "15672:15672" # Web UI
-      - "5672:5672"   # RabbitMQ protocol
+      - "15672:15672"
+      - "5672:5672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
@@ -49,12 +49,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # ✅ 4 воркера
   worker1:
     build:
-      context: .
-      dockerfile: worker/Dockerfile
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker1
+    env_file: .env
     volumes:
+      - ./worker:/worker/worker
       - ./shared:/worker/shared
     depends_on:
       - rabbitmq
@@ -62,9 +64,12 @@ services:
 
   worker2:
     build:
-      context: .
-      dockerfile: worker/Dockerfile
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker2
+    env_file: .env
     volumes:
+      - ./worker:/worker/worker
       - ./shared:/worker/shared
     depends_on:
       - rabbitmq
@@ -72,9 +77,12 @@ services:
 
   worker3:
     build:
-      context: .
-      dockerfile: worker/Dockerfile
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker3
+    env_file: .env
     volumes:
+      - ./worker:/worker/worker
       - ./shared:/worker/shared
     depends_on:
       - rabbitmq
@@ -82,9 +90,12 @@ services:
 
   worker4:
     build:
-      context: .
-      dockerfile: worker/Dockerfile
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker4
+    env_file: .env
     volumes:
+      - ./worker:/worker/worker
       - ./shared:/worker/shared
     depends_on:
       - rabbitmq
