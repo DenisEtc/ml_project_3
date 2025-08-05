@@ -1,17 +1,47 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from datetime import timedelta
+from typing import List
+
+# Импорт API сервисов
 from app.services.auth_service import authenticate_user, create_access_token, get_current_user, get_db
-from app.services.user_service import create_user, get_user_by_id
+from app.services.user_service import create_user
 from app.services.transaction_service import create_transaction, get_transactions
 from app.services.ml_task_service import send_task_to_queue
+
+# Импорт схем
 from app.schemas.user import UserCreate, UserResponse
 from app.schemas.auth import Token
 from app.schemas.ml_task import PredictionRequest
 from app.schemas.transaction import TransactionResponse
-from typing import List
-from datetime import timedelta
 
-app = FastAPI(title="ML Service API")
+# Импорт маршрутов для веб-интерфейса
+from app.routes import web_routes
+
+# Создаём FastAPI
+app = FastAPI(title="ML Service API with Web UI")
+
+# CORS для фронтенда
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Подключаем статические файлы
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Подключаем веб-маршруты
+app.include_router(web_routes.router)
+
+# HEALTH CHECK
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "Service running with API + Web UI"}
 
 # --- AUTH ---
 @app.post("/auth/register", response_model=UserResponse)
