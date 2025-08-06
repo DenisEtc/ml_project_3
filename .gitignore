@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.db
+*.sqlite3
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Logs and debug
+*.log
+*.out
+*.err
+
+# System
+.DS_Store
+Thumbs.db
+
+# VSCode and other IDEs
+.vscode/
+.idea/
+
+# Docker
+*.pid
+*.sock
+
+# Model files (if generated during runtime)
+*.h5
+*.joblib
+*.sav
+
+# Cache files
+*.cache/
+.cache/
+__pycache__/
+
+# Output
+*.bak
+*.tmp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python compiled bytecode
+*.pyc
+
+# Docker volumes (optional if mounted locally)
+project_postgres_data/
+project_rabbitmq_data/
