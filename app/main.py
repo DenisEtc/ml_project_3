@@ -11,6 +11,7 @@ from app.services.user_service import create_user
 from app.services.transaction_service import create_transaction, get_transactions
 from app.services.ml_task_service import send_task_to_queue
 
+
 # Импорт схем
 from app.schemas.user import UserCreate, UserResponse
 from app.schemas.auth import Token

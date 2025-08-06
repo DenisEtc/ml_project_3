@@ -1,17 +1,3 @@
-## Описание проекта
-
-Проект реализует платформу для управления пользователями, балансом, задачами машинного обучения и взаимодействия с ML-сервисом через очередь сообщений RabbitMQ.
-Включает:
-
-* REST API (FastAPI)
-* Веб-интерфейс
-* Очередь задач (RabbitMQ)
-* Несколько ML-воркеров для обработки задач
-* PostgreSQL в качестве базы данных
-* Nginx для маршрутизации
-
----
-
 ## Основной функционал
 
 * Регистрация и аутентификация пользователей (JWT)
@@ -20,6 +6,20 @@
 * Обработка задач несколькими воркерами через RabbitMQ
 * Веб-интерфейс для работы с системой
 * API-документация (Swagger)
+
+---
+
+## Стек технологий
+
+* **Backend:** FastAPI
+* **Frontend:** HTML, CSS (шаблоны Jinja2)
+* **База данных:** PostgreSQL + SQLAlchemy
+* **Очередь сообщений:** RabbitMQ
+* **ML:** Python, pickle-модель
+* **Контейнеризация:** Docker, Docker Compose
+* **Обратный прокси:** Nginx
+
+---
 
 ## Структура проекта
 
@@ -49,7 +49,23 @@ project/
 
 ---
 
-## После успешного запуска доступно:
+## Установка и запуск
+
+### 1. Клонирование репозитория
+
+```bash
+git clone <repo_url>
+cd project
+```
+
+### 2. Запуск через Docker Compose
+
+```bash
+docker-compose down --volumes --remove-orphans
+docker-compose up --build -d
+```
+
+После успешного запуска доступно:
 
 * Веб-интерфейс: [http://localhost](http://localhost)
 * Swagger API: [http://localhost/docs](http://localhost/docs)
@@ -110,3 +126,24 @@ POST /predict
 ```bash
 docker logs worker1
 ```
+
+---
+
+## API-документация
+
+Swagger доступен по адресу:
+
+```
+http://localhost/docs
+```
+
+---
+
+## Требования
+
+* Docker, Docker Compose
+* Порт `80` свободен (для Nginx)
+* Порт `5432` (PostgreSQL)
+* Порт `15672` (RabbitMQ Management UI)
+
+---

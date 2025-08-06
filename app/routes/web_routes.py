@@ -3,14 +3,12 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import status
 import requests
+from app.services.ml_task_service import run_sync_prediction
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-API_URL = "http://ml_app:8000"  # Для взаимодействия с API внутри контейнеров
-
-
-# Если тестируешь локально, поставь http://localhost:8000
+API_URL = "http://ml_app:8000"
 
 @router.get("/")
 def home(request: Request):
@@ -61,13 +59,21 @@ def dashboard(request: Request):
 
     headers = {"Authorization": f"Bearer {token}"}
     user_response = requests.get(f"{API_URL}/users/me", headers=headers)
-    transactions_response = requests.get(f"{API_URL}/transactions?user_id={user_response.json()['id']}",
-                                         headers=headers)
+
+    if user_response.status_code != 200:
+        return RedirectResponse("/login")
+
+    user = user_response.json()
+
+    transactions_response = requests.get(f"{API_URL}/transactions?user_id={user['id']}", headers=headers)
+    predictions_response = requests.get(f"{API_URL}/predictions?user_id={user['id']}", headers=headers)
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "user": user_response.json(),
-        "transactions": transactions_response.json()
+        "user": user,
+        "transactions": transactions_response.json(),
+        "predictions": predictions_response.json(),
+        "prediction_result": request.cookies.get("last_prediction")
     })
 
 
@@ -96,14 +102,14 @@ def predict(request: Request, feature1: float = Form(...), feature2: float = For
     headers = {"Authorization": f"Bearer {token}"}
     user_response = requests.get(f"{API_URL}/users/me", headers=headers)
 
-    requests.post(f"{API_URL}/predict", json={
-        "user_id": user_response.json()["id"],
-        "model_id": 1,
-        "input_data": {
-            "feature1": feature1,
-            "feature2": feature2,
-            "feature3": feature3
-        }
-    }, headers=headers)
+    user_id = user_response.json()["id"]
 
-    return RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
+    prediction = run_sync_prediction(user_id=user_id, input_data={
+        "feature1": feature1,
+        "feature2": feature2,
+        "feature3": feature3
+    })
+
+    response = RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
+    response.set_cookie(key="last_prediction", value=prediction)
+    return response
