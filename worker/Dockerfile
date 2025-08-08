@@ -1,10 +1,22 @@
 FROM python:3.11-slim
 
-WORKDIR /worker
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Устанавливаем зависимости
-COPY requirements.txt .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Копируем воркеровские зависимости и ставим их
+COPY worker/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Код worker и shared монтируем через volumes
-CMD ["python", "worker/worker.py"]
+# Копируем весь проект
+COPY . .
+
+ENV PYTHONPATH=/app
+
+CMD ["python", "-u", "worker/worker.py"]

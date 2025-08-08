@@ -1,115 +1,76 @@
-from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
 from fastapi.templating import Jinja2Templates
-from fastapi import status
-import requests
-from app.services.ml_task_service import run_sync_prediction
+from fastapi.responses import RedirectResponse
 
-router = APIRouter()
+from sqlalchemy.orm import Session
+
+from app.services.auth_service import get_current_user, get_db
+from app.services.transaction_service import create_transaction, get_transactions
+from app.services.ml_task_service import send_task_to_queue
+from shared.models.user import User
+
 templates = Jinja2Templates(directory="app/templates")
+web_router = APIRouter()
 
-API_URL = "http://ml_app:8000"
-
-@router.get("/")
+@web_router.get("/")
 def home(request: Request):
+
     return templates.TemplateResponse("index.html", {"request": request})
 
-
-@router.get("/register")
-def register_form(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
-
-
-@router.post("/register")
-def register_user(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
-    response = requests.post(f"{API_URL}/auth/register", json={
-        "username": username,
-        "email": email,
-        "password": password
-    })
-    if response.status_code == 200:
-        return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
-    return RedirectResponse("/register", status_code=status.HTTP_302_FOUND)
-
-
-@router.get("/login")
-def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-
-@router.post("/login")
-def login_user(request: Request, username: str = Form(...), password: str = Form(...)):
-    response = requests.post(f"{API_URL}/auth/login", params={
-        "username": username,
-        "password": password
-    })
-    if response.status_code == 200:
-        token = response.json()["access_token"]
-        response = RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="access_token", value=token)
-        return response
-    return RedirectResponse("/login", status_code=status.HTTP_302_FOUND)
-
-
-@router.get("/dashboard")
-def dashboard(request: Request):
-    token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse("/login")
-
-    headers = {"Authorization": f"Bearer {token}"}
-    user_response = requests.get(f"{API_URL}/users/me", headers=headers)
-
-    if user_response.status_code != 200:
-        return RedirectResponse("/login")
-
-    user = user_response.json()
-
-    transactions_response = requests.get(f"{API_URL}/transactions?user_id={user['id']}", headers=headers)
-    predictions_response = requests.get(f"{API_URL}/predictions?user_id={user['id']}", headers=headers)
-
+@web_router.get("/dashboard")
+def dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    txs = get_transactions(db, current_user.id)
+    last_prediction = request.cookies.get("last_prediction")
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "user": user,
-        "transactions": transactions_response.json(),
-        "predictions": predictions_response.json(),
-        "prediction_result": request.cookies.get("last_prediction")
+        "user": current_user,
+        "transactions": txs,
+        "last_prediction": last_prediction
     })
 
-
-@router.post("/deposit")
-def deposit(request: Request, amount: float = Form(...)):
-    token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse("/login")
-
-    headers = {"Authorization": f"Bearer {token}"}
-    user_response = requests.get(f"{API_URL}/users/me", headers=headers)
-    requests.post(f"{API_URL}/deposit", params={
-        "user_id": user_response.json()["id"],
-        "amount": amount
-    }, headers=headers)
-
+@web_router.post("/deposit")
+def deposit(
+    amount: float = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    create_transaction(db, current_user.id, amount, "deposit")
     return RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
 
+@web_router.post("/withdraw")
+def withdraw(
+    amount: float = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    txn = create_transaction(db, current_user.id, amount, "withdraw")
+    if not txn:
+        raise HTTPException(status_code=400, detail="Insufficient funds")
+    return RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
 
-@router.post("/predict")
-def predict(request: Request, feature1: float = Form(...), feature2: float = Form(...), feature3: float = Form(...)):
-    token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse("/login")
+@web_router.post("/predict-form")
+def predict_form(
+    feature1: float = Form(...),
+    feature2: float = Form(...),
+    feature3: float = Form(...),
+    current_user: User = Depends(get_current_user)
+):
 
-    headers = {"Authorization": f"Bearer {token}"}
-    user_response = requests.get(f"{API_URL}/users/me", headers=headers)
-
-    user_id = user_response.json()["id"]
-
-    prediction = run_sync_prediction(user_id=user_id, input_data={
+    input_data = {
         "feature1": feature1,
         "feature2": feature2,
         "feature3": feature3
-    })
+    }
 
-    response = RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
-    response.set_cookie(key="last_prediction", value=prediction)
-    return response
+    send_task_to_queue(user_id=current_user.id, model_id=1, input_data=input_data)
+    resp = RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
+    resp.set_cookie(key="last_prediction", value="task_enqueued")
+    return resp

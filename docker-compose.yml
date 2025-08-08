@@ -1,4 +1,33 @@
 services:
+  ml_postgres:
+    image: postgres:15
+    container_name: ml_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ml_service}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-ml_service}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   app:
     build:
       context: .
@@ -7,99 +36,53 @@ services:
     env_file: .env
     environment:
       PYTHONPATH: /app
-    volumes:
-      - ./app:/app/app
-      - ./shared:/app/shared
+      POSTGRES_HOST: ml_postgres
     ports:
       - "8000:8000"
     depends_on:
-      - database
-      - rabbitmq
+      ml_postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
-  web-proxy:
-    image: nginx:latest
-    container_name: ml_nginx
-    depends_on:
-      - app
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: ml_rabbit
-    restart: on-failure
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-
-  database:
-    image: postgres:14
-    container_name: ml_postgres
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: ml_worker
+    env_file: .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ml_service
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  worker1:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile
-    container_name: worker1
-    env_file: .env
-    volumes:
-      - ./worker:/worker/worker
-      - ./shared:/worker/shared
+      RABBIT_HOST: rabbitmq
+      QUEUE_NAME: ml_tasks
+      MODEL_PATH: shared/ml_model/heart_failure.pkl
+      POSTGRES_HOST: ml_postgres
     depends_on:
-      - rabbitmq
-      - database
+      ml_postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
-  worker2:
+  tests:
     build:
-      context: ./worker
+      context: .
       dockerfile: Dockerfile
-    container_name: worker2
+    container_name: ml_tests
     env_file: .env
-    volumes:
-      - ./worker:/worker/worker
-      - ./shared:/worker/shared
+    environment:
+      API_BASE_URL: http://ml_app:8000
+      PYTHONPATH: /app
     depends_on:
-      - rabbitmq
-      - database
+      app:
+        condition: service_started
+    command: >
+      sh -c "
+      for i in $(seq 1 60); do
+        curl -s http://ml_app:8000/openapi.json && break || sleep 1;
+      done &&
+      pip install --no-cache-dir pytest &&
+      pytest -q app/tests/test_functionality.py
+      "
 
-  worker3:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile
-    container_name: worker3
-    env_file: .env
-    volumes:
-      - ./worker:/worker/worker
-      - ./shared:/worker/shared
-    depends_on:
-      - rabbitmq
-      - database
-
-  worker4:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile
-    container_name: worker4
-    env_file: .env
-    volumes:
-      - ./worker:/worker/worker
-      - ./shared:/worker/shared
-    depends_on:
-      - rabbitmq
-      - database
 
 volumes:
   rabbitmq_data:
