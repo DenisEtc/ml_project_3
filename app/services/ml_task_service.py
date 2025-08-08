@@ -1,38 +1,26 @@
 import json
 import pika
-import requests
 
+RABBIT_HOST = "rabbitmq"
+QUEUE_NAME = "ml_tasks"
 
-def send_task_to_queue(user_id: int, model_id: int, input_data: dict):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='ml_rabbit'))
+def send_task_to_queue(user_id: int, model_id: int, input_data: dict) -> None:
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST))
     channel = connection.channel()
-    channel.queue_declare(queue='ml_tasks')
+    channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
     task = {
         "user_id": user_id,
         "model_id": model_id,
         "input_data": input_data
     }
+    body = json.dumps(task).encode("utf-8")
 
+    # Деливери-флаг как устойчивое сообщение
     channel.basic_publish(
-        exchange='',
-        routing_key='ml_tasks',
-        body=json.dumps(task)
+        exchange="",
+        routing_key=QUEUE_NAME,
+        body=body,
+        properties=pika.BasicProperties(delivery_mode=2)
     )
-
     connection.close()
-
-
-def run_sync_prediction(model_id: int, input_data: dict) -> float:
-    """
-    Выполняет синхронный HTTP-запрос к ML модели внутри контейнера.
-    """
-    response = requests.post(
-        "http://ml_worker1:8001/predict",
-        json={"model_id": model_id, "input_data": input_data}
-    )
-
-    if response.status_code == 200:
-        return response.json().get("prediction")
-    else:
-        return -1  # можно заменить на None или выбросить исключение

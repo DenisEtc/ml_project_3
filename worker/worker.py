@@ -1,72 +1,77 @@
 import json
-import pika
-import time
-import pickle
 import os
+import pickle
+import time
+
+import pika
 from sqlalchemy.orm import Session
+
 from shared.db import SessionLocal
 from shared.models.prediction import Prediction
 
-# Пути и конфигурация
-MODEL_PATH = "shared/ml_model/heart_failure.pkl"
-RABBITMQ_HOST = "rabbitmq"
+RABBIT_HOST = os.getenv("RABBIT_HOST", "rabbitmq")
+QUEUE_NAME = os.getenv("QUEUE_NAME", "ml_tasks")
+MODEL_PATH = os.getenv("MODEL_PATH", "shared/ml_model/heart_failure.pkl")
 
-# Загружаем ML модель при старте
-print("[*] Loading ML model...")
-with open(MODEL_PATH, "rb") as f:
-    model = pickle.load(f)
-print("[*] Model loaded successfully.")
+def load_model():
+    with open(MODEL_PATH, "rb") as f:
+        return pickle.load(f)
 
-def callback(ch, method, properties, body):
-    # Обработка входящих задач из очереди RabbitMQ
-    print(f"[x] Received task: {body}")
-    data = json.loads(body)
-
-    # Проверка корректности данных
-    if "input_data" not in data or not isinstance(data["input_data"], dict):
-        print("[!] Invalid data format")
-        return
-
-    # Подготовка данных для предсказания
+def handle_task(ch, method, properties, body, model):
     try:
-        features = [v for v in data["input_data"].values()]
-        prediction_result = model.predict([features])[0]
-    except Exception as e:
-        print(f"[!] Error during prediction: {e}")
-        return
+        data = json.loads(body.decode("utf-8"))
+        user_id = data["user_id"]
+        model_id = data["model_id"]
+        input_data = data["input_data"]
 
-    # Сохраняем результат в БД
-    db: Session = SessionLocal()
-    try:
-        new_prediction = Prediction(
-            user_id=data["user_id"],
-            model_id=data["model_id"],
-            prediction=str(prediction_result)
-        )
-        db.add(new_prediction)
-        db.commit()
-        print(f"[+] Prediction saved for user {data['user_id']}")
+        try:
+            pred_value = float(model.predict([input_data])[0])
+        except Exception:
+            # fallback
+            pred_value = 0.0
+
+        # Сохраняем предсказание
+        db: Session = SessionLocal()
+        try:
+            pred_row = Prediction(
+                user_id=user_id,
+                model_id=model_id,
+                prediction=str(pred_value),
+            )
+            db.add(pred_row)
+            db.commit()
+        finally:
+            db.close()
+
     except Exception as e:
-        db.rollback()
-        print(f"[!] Error saving prediction: {e}")
-    finally:
-        db.close()
+        print("[!] Error while processing task:", e)
 
 def main():
-    # Запускаем обработчик очереди
-    print("[*] Waiting for RabbitMQ to start...")
-    time.sleep(5)  # Ждём RabbitMQ
+    print("[*] Loading ML model...")
+    model = load_model()
 
     print("[*] Connecting to RabbitMQ...")
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_HOST))
     channel = connection.channel()
-    channel.queue_declare(queue="ml_tasks", durable=True)
-
+    channel.queue_declare(queue=QUEUE_NAME, durable=True)
     channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue="ml_tasks", on_message_callback=callback, auto_ack=True)
 
+    def callback(ch, method, properties, body):
+        handle_task(ch, method, properties, body, model)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=callback, auto_ack=False)
     print("[*] Worker started. Waiting for messages...")
-    channel.start_consuming()
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        print("Stopping...")
+        try:
+            channel.stop_consuming()
+        except Exception:
+            pass
+        connection.close()
 
 if __name__ == "__main__":
+    time.sleep(int(os.getenv("WORKER_STARTUP_DELAY", "2")))
     main()

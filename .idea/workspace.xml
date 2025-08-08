@@ -5,13 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="85416139-1f6c-4f55-a9f4-497a87620510" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.dockerignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/tests/test_functionality.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pytest.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/app/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/routes/web_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/web_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/ml_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/ml_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/transaction.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/transaction.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/auth_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/auth_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/services/ml_task_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/ml_task_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/tests/test_scenario.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shared/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/shared/db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/worker/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/worker/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/worker.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/worker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,8 +36,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Dockerfile" />
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -41,17 +55,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "feature/web-ui",
-    "last_opened_file_path": "/Users/denislavrinenko/Desktop/Studying/ML/3. ml_services/project",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/web-ui&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/denislavrinenko/Desktop/Studying/ML/3. ml_services/project&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/app/tests" />
