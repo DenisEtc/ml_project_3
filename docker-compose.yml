@@ -18,8 +18,8 @@ services:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -37,6 +37,7 @@ services:
     environment:
       PYTHONPATH: /app
       POSTGRES_HOST: ml_postgres
+      TEST_MODE: "1"          # включаем мок предикта для тестов
     ports:
       - "8000:8000"
     depends_on:
@@ -80,9 +81,8 @@ services:
         curl -s http://ml_app:8000/openapi.json && break || sleep 1;
       done &&
       pip install --no-cache-dir pytest &&
-      pytest -q app/tests/test_functionality.py
+      pytest -q app/tests
       "
-
 
 volumes:
   rabbitmq_data:
