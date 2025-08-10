@@ -37,7 +37,13 @@ services:
     environment:
       PYTHONPATH: /app
       POSTGRES_HOST: ml_postgres
-      TEST_MODE: "1"          # включаем мок предикта для тестов
+      # включайте 1 для синхронного демо; 0 — боевой режим через очередь
+      TEST_MODE: "0"
+      # параметры очереди (чтобы паблишер брал их из окружения)
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: guest
+      RABBIT_PASSWORD: guest
+      QUEUE_NAME: ml_tasks
     ports:
       - "8000:8000"
     depends_on:
@@ -45,6 +51,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
 
   worker:
     build:
@@ -53,15 +60,24 @@ services:
     container_name: ml_worker
     env_file: .env
     environment:
+      # очередь
       RABBIT_HOST: rabbitmq
+      RABBIT_USER: guest
+      RABBIT_PASSWORD: guest
       QUEUE_NAME: ml_tasks
-      MODEL_PATH: shared/ml_model/heart_failure.pkl
+      DATABASE_URL: ${DATABASE_URL}
       POSTGRES_HOST: ml_postgres
+      MODEL_PATH: shared/ml_model/heart_failure.pkl
+      # простые «веса» для линейного предсказания
+      FEATURE_ORDER: feature1,feature2,feature3
+      WEIGHTS: 0.7,0.2,0.1
+      BIAS: 0.0
     depends_on:
       ml_postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
 
   tests:
     build:

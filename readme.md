@@ -1,149 +1,163 @@
-## Основной функционал
+# ML Service
+Личный кабинет пользователя ML сервиса
 
-* Регистрация и аутентификация пользователей (JWT)
-* Пополнение баланса
-* Создание ML-задачи для предсказания
-* Обработка задач несколькими воркерами через RabbitMQ
-* Веб-интерфейс для работы с системой
-* API-документация (Swagger)
+## Описание
 
----
+Веб-приложение, реализующее личный кабинет пользователя ML-сервиса.  
+Функционал включает:
+- Регистрация и авторизация пользователей (JWT).
+- Просмотр и пополнение баланса в условных кредитах.
+- Выполнение запросов к ML-сервису (с оплатой в кредитах).
+- История транзакций и предсказаний.
+- REST API и Web-интерфейс.
+- Асинхронная обработка задач через RabbitMQ и воркеров.
 
-## Стек технологий
-
-* **Backend:** FastAPI
-* **Frontend:** HTML, CSS (шаблоны Jinja2)
-* **База данных:** PostgreSQL + SQLAlchemy
-* **Очередь сообщений:** RabbitMQ
-* **ML:** Python, pickle-модель
-* **Контейнеризация:** Docker, Docker Compose
-* **Обратный прокси:** Nginx
+В проекте предусмотрена валидация входных данных и проверка положительного баланса перед выполнением запросов.
 
 ---
 
 ## Структура проекта
 
 ```
-project/
-├── app/                # Веб-приложение (FastAPI)
-│   ├── main.py         # Точка входа
-│   ├── routes/         # Маршруты (API + Web)
-│   ├── schemas/        # Pydantic-схемы
-│   ├── services/       # Логика работы
-│   ├── templates/      # HTML-шаблоны
-│   ├── static/         # CSS
-│   └── tests/          # Тестовые сценарии
-├── shared/             # Общий код для app и worker
-│   ├── db.py           # Подключение к БД
-│   ├── models/         # SQLAlchemy модели
-│   └── ml_model/       # ML модель и загрузчик
-├── worker/             # Код ML-воркера
-│   ├── worker.py       # Основная логика
-│   ├── requirements.txt
-│   └── Dockerfile
-├── docker-compose.yml  # Настройка сервисов
-├── Dockerfile          # Для FastAPI-приложения
-├── nginx.conf          # Конфиг Nginx
-└── requirements.txt    # Зависимости для app
+app/                 # Backend API и web-маршруты
+shared/              # Общие модели и настройки
+worker/              # Код воркеров
+tests/               # Автотесты
+docker-compose.yml   # Конфигурация сервисов
+Dockerfile           # Сборка образа приложения
 ```
+
+## Стек технологий
+
+- **Backend**: Python 3.11, FastAPI, SQLAlchemy
+- **База данных**: PostgreSQL
+- **Очереди**: RabbitMQ
+- **Фронтенд**: Jinja2 templates (через FastAPI)
+- **Аутентификация**: OAuth2, JWT
+- **Тестирование**: pytest
+- **Инфраструктура**: Docker, docker-compose
 
 ---
 
-## Установка и запуск
+## Запуск проекта
 
 ### 1. Клонирование репозитория
+```bash
+git clone <url_репозитория>
+cd <папка_проекта>
+````
+
+### 2. Настройка окружения
+
+Создайте файл `.env` в корне проекта. Минимальный набор переменных:
+
+```env
+POSTGRES_USER=app
+POSTGRES_PASSWORD=app
+POSTGRES_DB=app
+DATABASE_URL=postgresql+psycopg2://app:app@ml_postgres:5432/app
+SECRET_KEY=dev_secret
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+RABBIT_HOST=rabbitmq
+QUEUE_NAME=ml_tasks
+TEST_MODE=1
+```
+
+`TEST_MODE=1` включает синхронный режим предсказаний (для локальной проверки без воркеров).
+
+### 3. Сборка и запуск
 
 ```bash
-git clone <repo_url>
-cd project
+docker compose up -d --build
 ```
 
-### 2. Запуск через Docker Compose
+При первом запуске создайте демо-данные:
 
 ```bash
-docker-compose down --volumes --remove-orphans
-docker-compose up --build -d
+docker exec -it ml_app bash -lc "python -m app.init_db"
 ```
-
-После успешного запуска доступно:
-
-* Веб-интерфейс: [http://localhost](http://localhost)
-* Swagger API: [http://localhost/docs](http://localhost/docs)
-* RabbitMQ панель: [http://localhost:15672](http://localhost:15672) (логин: guest, пароль: guest)
 
 ---
 
-## Тестирование функционала
+## Проверка функциональности
 
-### Регистрация
+### Вариант A — через Web-интерфейс
 
-Через веб-интерфейс `/register` или API:
+1. Открой браузер: [http://localhost:8000/web](http://localhost:8000/web)
+2. Зарегистрируйте нового пользователя.
+3. Войдите под созданной учётной записью.
+4. Пополните баланс (например, на 10 кредитов).
+5. Выберите модель из списка и введите входные признаки.
+6. Нажмите **Сделать предсказание**:
 
-```http
-POST /auth/register
-```
+   * Баланс уменьшится на цену модели.
+   * В истории транзакций появится списание (`withdraw`).
+   * В истории предсказаний появится новый результат.
 
-### Логин
+### Вариант B — через REST API
 
-Через `/login` или API:
-
-```http
-POST /auth/login
-```
-
-### Пополнение баланса
-
-```http
-POST /deposit
-```
-
-### Создание задачи для предсказания
-
-```http
-POST /predict
-```
-
-Пример данных:
-
-```json
-{
-  "user_id": 1,
-  "model_id": 1,
-  "input_data": {"age": 65, "cholesterol": 250, "bp": 130}
-}
-```
-
-### Проверка очереди
-
-Задачи попадают в RabbitMQ → Обрабатываются воркерами → Результаты сохраняются в БД.
-
----
-
-## Проверка работы воркеров
-
-Просмотр логов:
+Пример с `curl`:
 
 ```bash
-docker logs worker1
+API=http://localhost:8000
+
+# Регистрация
+curl -X POST $API/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","email":"alice@example.com","password":"test123"}'
+
+# Логин и получение токена
+TOKEN=$(curl -s -X POST $API/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'username=alice&password=test123' | jq -r .access_token)
+
+# Получение user_id
+USER_ID=$(curl -s -H "Authorization: Bearer $TOKEN" $API/users/me | jq -r .id)
+
+# Пополнение баланса
+curl -X POST $API/transactions/deposit \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":'$USER_ID',"amount":10,"type":"deposit"}'
+
+# Предсказание
+MODEL_ID=<id_существующей_модели>
+curl -X POST $API/predict \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":'$USER_ID',"model_id":'$MODEL_ID',"input_data":{"feature1":1.0,"feature2":2.0,"feature3":3.0}}'
 ```
 
 ---
 
-## API-документация
+## Боевой режим (с воркерами)
 
-Swagger доступен по адресу:
+Для асинхронной работы:
 
-```
-http://localhost/docs
-```
+1. Установите `TEST_MODE=0` в `.env` или удалите переменную.
+2. Перезапустите проект:
 
----
-
-## Требования
-
-* Docker, Docker Compose
-* Порт `80` свободен (для Nginx)
-* Порт `5432` (PostgreSQL)
-* Порт `15672` (RabbitMQ Management UI)
+   ```bash
+   docker compose down -v
+   docker compose up -d --build
+   ```
+3. Предсказания будут отправляться в RabbitMQ и обрабатываться контейнером `ml_worker`.
+4. Очередь задач доступна в UI RabbitMQ: [http://localhost:15672](http://localhost:15672) (логин/пароль `guest`/`guest`).
 
 ---
+
+## Тестирование
+
+Интеграционные тесты выполняются в контейнере `ml_tests`:
+
+```bash
+docker logs ml_tests
+```
+
+или вручную:
+
+```bash
+docker run --rm --network=project_default \
+  -e API_BASE_URL=http://ml_app:8000 \
+  project-tests:latest pytest -q
+```
