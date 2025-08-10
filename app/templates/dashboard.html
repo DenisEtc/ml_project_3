@@ -1,42 +1,152 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <h1>Welcome, {{ user.username }}</h1>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Личный кабинет</title>
+  </head>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto;">
+    <div style="max-width: 1100px; margin: 24px auto; padding: 16px;">
+      <h1>Личный кабинет</h1>
 
-    <h2>Make Prediction</h2>
-    <form action="/predict" method="post">
-        <label>Feature 1: <input type="number" name="feature1" step="any" required></label><br>
-        <label>Feature 2: <input type="number" name="feature2" step="any" required></label><br>
-        <label>Feature 3: <input type="number" name="feature3" step="any" required></label><br>
-        <button type="submit">Predict</button>
-    </form>
+      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
+        <h3>Профиль</h3>
+        <p><b>Логин:</b> {{ user.username }}</p>
+        <p><b>Email:</b> {{ user.email }}</p>
+        <p><b>Баланс:</b> {{ "%.2f"|format(user.balance) }} кредитов</p>
 
-    {% if prediction_result %}
-        <p><strong>Last Prediction:</strong> {{ prediction_result }}</p>
-    {% endif %}
+        <form method="post" action="/web/deposit" style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+          <label>Пополнить на:</label>
+          <input type="number" name="amount" step="0.01" min="0.01" required style="padding: 6px;">
+          <button type="submit" style="padding: 6px 12px;">Пополнить</button>
+        </form>
+      </section>
 
-    <h2>Prediction History</h2>
-    <ul>
-        {% for pred in predictions %}
-            <li>{{ pred.created_at }} — Prediction: {{ pred.prediction }}, Input: {{ pred.input_data }}</li>
-        {% endfor %}
-    </ul>
+      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
+        <h3>Запрос к ML‑сервису</h3>
 
-    <h2>Deposit</h2>
-    <form action="/deposit" method="post">
-        <input type="number" name="amount" step="any" required>
-        <button type="submit">Deposit</button>
-    </form>
+        <form method="post" action="/web/predict" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: end;">
+          <div>
+            <label><b>Модель:</b></label>
+            <select name="model_id" required style="padding: 6px; width: 100%;">
+              {% if models and models|length > 0 %}
+                {% for m in models %}
+                  <option value="{{ m.id }}">#{{ m.id }} — {{ m.name or 'Model' }} ({{ m.price or 1 }} кредитов)</option>
+                {% endfor %}
+              {% else %}
+                <option value="1">#1 — Default (1 кредит)</option>
+              {% endif %}
+            </select>
+          </div>
+          <input type="number" step="any" name="feature1" placeholder="feature1" required />
+          <input type="number" step="any" name="feature2" placeholder="feature2" required />
+          <input type="number" step="any" name="feature3" placeholder="feature3" required />
+          <div><button type="submit">Отправить</button></div>
+        </form>
 
-    <h2>Transactions</h2>
-    <ul>
-        {% for tx in transactions %}
-            <li>{{ tx.timestamp }} — {{ tx.amount }}</li>
-        {% endfor %}
-    </ul>
-</body>
+        <div style="margin-top: 16px;">
+          <form method="post" action="/web/predict-form">
+            <label><b>Данные (JSON):</b></label>
+            <textarea name="records_json" rows="6" style="width: 100%; padding: 8px;" required>
+[
+  {"feature1": 1.0, "feature2": 2.0},
+  {"feature1": "oops", "feature2": 3.0}
+]
+            </textarea>
+            <small>Объект или массив объектов; валидной считается запись, где все значения — числа. Невалидные записи будут показаны ниже.</small>
+            <div style="margin-top: 8px;">
+              <label>Модель (для JSON):</label>
+              <select name="model_id" required style="padding: 6px;">
+                {% if models and models|length > 0 %}
+                  {% for m in models %}
+                    <option value="{{ m.id }}">#{{ m.id }} — {{ m.name or 'Model' }} ({{ m.price or 1 }} кредитов)</option>
+                  {% endfor %}
+                {% else %}
+                  <option value="1">#1 — Default (1 кредит)</option>
+                {% endif %}
+              </select>
+              <button type="submit" style="margin-left: 8px;">Отправить JSON</button>
+            </div>
+          </form>
+        </div>
+
+        {% if result %}
+          <div style="margin-top: 12px; padding: 10px; border-left: 4px solid #6c6;">
+            <div><b>Результат:</b>
+              {% if result.charged %}
+                предсказание выполнено, списано {{ "%.2f"|format(result.cost) }} кредитов.
+              {% else %}
+                валидных данных не найдено — списаний нет.
+              {% endif %}
+            </div>
+            <div>Создано записей предсказаний: {{ result.created_count }}</div>
+          </div>
+        {% endif %}
+
+        {% if invalid_records and invalid_records|length > 0 %}
+          <div style="margin-top: 12px; padding: 10px; border-left: 4px solid #c66;">
+            <b>Невалидные записи (не были обработаны):</b>
+            <pre style="white-space: pre-wrap;">{{ invalid_records | tojson(indent=2) }}</pre>
+          </div>
+        {% endif %}
+      </section>
+
+      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
+        <h3>История предсказаний</h3>
+        {% if predictions and predictions|length > 0 %}
+          <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f5f5f5;">
+              <tr>
+                <th>ID</th>
+                <th>Модель</th>
+                <th>Предсказание</th>
+                <th>Списано (кред.)</th>
+                <th>Время</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for p in predictions %}
+              <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.model_id }}</td>
+                <td>{{ p.prediction }}</td>
+                <td>{{ "%.2f"|format(p.cost or 0.0) }}</td>
+                <td>{{ p.created_at }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>Пока нет предсказаний.</p>
+        {% endif %}
+      </section>
+
+      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
+        <h3>История транзакций</h3>
+        {% if transactions and transactions|length > 0 %}
+          <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f5f5f5;">
+              <tr>
+                <th>ID</th>
+                <th>Тип</th>
+                <th>Сумма</th>
+                <th>Время</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for t in transactions %}
+              <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.type }}</td>
+                <td>{% if t.type == 'withdraw' %}-{% endif %}{{ "%.2f"|format(t.amount) }}</td>
+                <td>{{ t.created_at }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>Пока нет транзакций.</p>
+        {% endif %}
+      </section>
+    </div>
+  </body>
 </html>

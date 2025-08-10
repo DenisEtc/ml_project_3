@@ -1,11 +1,20 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="col-md-4 offset-md-4">
-    <h3 class="mb-3">Login</h3>
-    <form method="post">
-        <input type="text" name="username" class="form-control mb-3" placeholder="Username" required>
-        <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
-        <button class="btn btn-primary w-100">Login</button>
-    </form>
-</div>
-{% endblock %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Вход</title>
+  </head>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto;">
+    <div style="max-width: 480px; margin: 48px auto;">
+      <h2>Вход</h2>
+      <form method="post" action="/web/login" style="display: grid; gap: 8px;">
+        <input name="username" placeholder="Логин" required />
+        <input name="password" type="password" placeholder="Пароль" required />
+        <button type="submit">Войти</button>
+      </form>
+      <p style="margin-top: 12px;">
+        Нет аккаунта? <a href="/web/register">Зарегистрироваться</a>
+      </p>
+    </div>
+  </body>
+</html>
