@@ -1,7 +1,5 @@
 from typing import List, Dict, Tuple
-import json
-
-from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
+from fastapi import APIRouter, Request, Depends, Form, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -16,12 +14,12 @@ from shared.models.ml_model import MLModel
 templates = Jinja2Templates(directory="app/templates")
 web_router = APIRouter()
 
+
 def current_user_by_cookie(db: Session, request: Request) -> User | None:
     token = request.cookies.get("access_token")
     if not token:
         return None
-    # очень простой способ – запросить /users/me через заголовок мы не можем тут,
-    # поэтому вытащим имя из JWT и найдём юзера
+    # простая дешифровка JWT без запроса к API
     from jose import jwt, JWTError
     from app.services.auth_service import SECRET_KEY, ALGORITHM
     try:
@@ -32,6 +30,26 @@ def current_user_by_cookie(db: Session, request: Request) -> User | None:
         return db.query(User).filter(User.username == username).first()
     except JWTError:
         return None
+
+
+def _render_dashboard(request: Request, db: Session, user: User, **extra_context):
+    txs = get_transactions(db, user.id)
+    preds = (
+        db.query(Prediction)
+        .filter(Prediction.user_id == user.id)
+        .order_by(Prediction.created_at.desc())
+        .all()
+    )
+    models = db.query(MLModel).all()
+    context = {
+        "request": request,
+        "user": user,
+        "transactions": txs,
+        "predictions": preds,
+        "models": models,
+    }
+    context.update(extra_context)
+    return templates.TemplateResponse("dashboard.html", context)
 
 
 @web_router.get("/")
@@ -52,9 +70,8 @@ def register(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    user = create_user_row(db, username=username, email=email, password=password)
-    resp = RedirectResponse(url="/web/login", status_code=status.HTTP_302_FOUND)
-    return resp
+    create_user_row(db, username=username, email=email, password=password)
+    return RedirectResponse(url="/web/login", status_code=status.HTTP_302_FOUND)
 
 
 @web_router.get("/login")
@@ -71,10 +88,14 @@ def login(
 ):
     user = authenticate_user(db, username, password)
     if not user:
-        raise HTTPException(status_code=400, detail="Bad credentials")
+        # мягкая ошибка: возвращаем форму логина с сообщением
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error_message": "Неверные логин или пароль"},
+            status_code=400,
+        )
     token = create_access_token({"sub": user.username})
     resp = RedirectResponse(url="/web/dashboard", status_code=status.HTTP_302_FOUND)
-    # простая cookie (для демо)
     resp.set_cookie("access_token", token, httponly=True, samesite="Lax")
     return resp
 
@@ -84,13 +105,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     user = current_user_by_cookie(db, request)
     if not user:
         return RedirectResponse("/web/login", status_code=status.HTTP_302_FOUND)
-    txs = get_transactions(db, user.id)
-    preds = db.query(Prediction).filter(Prediction.user_id == user.id).order_by(Prediction.created_at.desc()).all()
-    models = db.query(MLModel).all()
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {"request": request, "user": user, "transactions": txs, "predictions": preds, "models": models},
-    )
+    return _render_dashboard(request, db, user)
 
 
 @web_router.post("/deposit")
@@ -98,20 +113,16 @@ def deposit(request: Request, amount: float = Form(...), db: Session = Depends(g
     user = current_user_by_cookie(db, request)
     if not user:
         return RedirectResponse("/web/login", status_code=status.HTTP_302_FOUND)
+
     if amount <= 0:
-        raise HTTPException(status_code=400, detail="Amount must be positive")
+        return _render_dashboard(
+            request, db, user, error_message="Сумма пополнения должна быть больше нуля"
+        )
+
     create_transaction(db, user_id=user.id, amount=amount, type="deposit")
-    return RedirectResponse("/web/dashboard", status_code=status.HTTP_302_FOUND)
-
-
-def _split_valid_invalid(records: List[Dict]) -> Tuple[List[Dict], List[Dict]]:
-    valid, invalid = [], []
-    for r in records:
-        if isinstance(r, dict) and all(isinstance(v, (int, float)) for v in r.values()):
-            valid.append(r)
-        else:
-            invalid.append(r)
-    return valid, invalid
+    return _render_dashboard(
+        request, db, user, info_message="Баланс успешно пополнен"
+    )
 
 
 # предикт из простой формы
@@ -130,37 +141,26 @@ def predict_from_form(
 
     model = db.query(MLModel).filter(MLModel.id == model_id).first()
     if not model:
-        raise HTTPException(status_code=404, detail="Model not found")
-    if user.balance < model.price:
-        raise HTTPException(status_code=400, detail="Insufficient balance")
+        return _render_dashboard(request, db, user, error_message="Модель не найдена")
 
-    input_data = {"feature1": feature1, "feature2": feature2, "feature3": feature3}
-    # В демо отправим в БД сразу предикт и спишем баланс:
-    from shared.models.prediction import Prediction
-    pred = Prediction(user_id=user.id, model_id=model_id, prediction="0.42", cost=float(model.price))
+    price = float(model.price or 0.0)
+    if user.balance < price:
+        # КЛЮЧЕВАЯ ПРАВКА: вместо HTTPException — мягкое сообщение на дашборде
+        return _render_dashboard(
+            request, db, user, error_message="Недостаточно кредитов для предсказания"
+        )
+
+    # Выполним «предсказание» и списание (демо-логика)
+    pred = Prediction(user_id=user.id, model_id=model_id, prediction="0.42", cost=price)
     db.add(pred)
-    user.balance -= float(model.price)
+
+    user.balance -= price
     db.add(user)
+
     from shared.models.transaction import Transaction
-    db.add(Transaction(user_id=user.id, amount=float(model.price), type="withdraw"))
+    db.add(Transaction(user_id=user.id, amount=price, type="withdraw"))
     db.commit()
 
-    txs = get_transactions(db, user.id)
-    preds = db.query(Prediction).filter(Prediction.user_id == user.id).order_by(Prediction.created_at.desc()).all()
-    models = db.query(MLModel).all()
-
-    result = {"prediction": pred.prediction}
-    invalid: List[dict] = []
-
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "user": user,
-            "transactions": txs,
-            "predictions": preds,
-            "models": models,
-            "result": result,
-            "invalid_records": invalid,
-        },
+    return _render_dashboard(
+        request, db, user, info_message="Предсказание выполнено", result={"prediction": pred.prediction}
     )

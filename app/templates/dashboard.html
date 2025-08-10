@@ -1,152 +1,262 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8"/>
-    <title>Личный кабинет</title>
-  </head>
-  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto;">
-    <div style="max-width: 1100px; margin: 24px auto; padding: 16px;">
-      <h1>Личный кабинет</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Личный кабинет — ML Service</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;        /* slate-900 */
+      --panel: #111827;     /* gray-900 */
+      --muted: #94a3b8;     /* slate-400 */
+      --text: #e5e7eb;      /* gray-200 */
+      --accent: #2563eb;    /* blue-600 */
+      --accent-2: #1e40af;  /* blue-800 */
+      --danger-bg: #fee2e2; /* red-100 */
+      --danger-tx: #991b1b; /* red-800 */
+      --success-bg: #dcfce7;/* green-100 */
+      --success-tx: #166534;/* green-800 */
+      --border: #334155;    /* slate-700 */
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color: var(--text);
+      background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+      min-height: 100vh;
+    }
+    a { color: var(--muted); text-decoration: none; }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .brand { font-weight: 700; letter-spacing: .3px; }
+    .card {
+      background: rgba(17,24,39,.7);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 920px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    h1,h2,h3 { margin: 0 0 12px; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 18px; color: var(--muted); }
+    .balance {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    .badge {
+      background: rgba(37,99,235,.12);
+      border: 1px solid rgba(37,99,235,.35);
+      color: #bfdbfe; padding: 6px 10px; border-radius: 999px; font-weight: 600;
+    }
+    .btn {
+      background: var(--accent);
+      color: white; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+      font-weight: 600;
+    }
+    .btn:hover { background: var(--accent-2); }
+    .input, select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; background: #0b1020; color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; }
+    .alerts { margin-bottom: 16px; }
+    .alert {
+      border-radius: 12px; padding: 12px 14px; border: 1px solid;
+      background: rgba(0,0,0,.2);
+    }
+    .alert-danger { background: var(--danger-bg); color: var(--danger-tx); border-color: #fecaca; }
+    .alert-success { background: var(--success-bg); color: var(--success-tx); border-color: #bbf7d0; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { text-align: left; color: var(--muted); background: rgba(2,6,23,.5); }
+    tr:last-child td { border-bottom: 0; }
+    .muted { color: var(--muted); }
+    .result {
+      display: inline-block; padding: 8px 12px; border-radius: 12px;
+      border: 1px dashed rgba(148,163,184,.4);
+      background: rgba(2,6,23,.4);
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">ML Service · Личный кабинет</div>
+      <div class="muted">Пользователь: {{ user.username }}</div>
+    </header>
 
-      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
-        <h3>Профиль</h3>
-        <p><b>Логин:</b> {{ user.username }}</p>
-        <p><b>Email:</b> {{ user.email }}</p>
-        <p><b>Баланс:</b> {{ "%.2f"|format(user.balance) }} кредитов</p>
+    <div class="alerts">
+      {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+      {% endif %}
+      {% if info_message %}
+        <div class="alert alert-success">{{ info_message }}</div>
+      {% endif %}
+    </div>
 
-        <form method="post" action="/web/deposit" style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
-          <label>Пополнить на:</label>
-          <input type="number" name="amount" step="0.01" min="0.01" required style="padding: 6px;">
-          <button type="submit" style="padding: 6px 12px;">Пополнить</button>
-        </form>
-      </section>
-
-      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
-        <h3>Запрос к ML‑сервису</h3>
-
-        <form method="post" action="/web/predict" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: end;">
+    <section class="grid grid-2" style="margin-bottom: 16px;">
+      <div class="card">
+        <h1>Баланс</h1>
+        <div class="balance">
           <div>
-            <label><b>Модель:</b></label>
-            <select name="model_id" required style="padding: 6px; width: 100%;">
-              {% if models and models|length > 0 %}
-                {% for m in models %}
-                  <option value="{{ m.id }}">#{{ m.id }} — {{ m.name or 'Model' }} ({{ m.price or 1 }} кредитов)</option>
-                {% endfor %}
-              {% else %}
-                <option value="1">#1 — Default (1 кредит)</option>
-              {% endif %}
+            <div class="muted">Текущий баланс</div>
+            <div style="font-size: 28px; font-weight: 800; margin-top: 4px;">
+              {{ "%.2f"|format(user.balance or 0) }} <span class="muted" style="font-size:14px;">кредитов</span>
+            </div>
+          </div>
+          <div><span class="badge">Аккаунт</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1>Пополнение</h1>
+        <form method="post" action="/web/deposit" style="display: grid; gap: 12px; margin-top: 8px;">
+          <div class="row">
+            <label for="amount" class="muted">Сумма пополнения</label>
+            <input id="amount" class="input" type="number" name="amount" step="0.01" min="0.01" placeholder="Например, 10" required />
+          </div>
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn" type="submit">Пополнить</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="grid grid-2" style="margin-bottom: 16px;">
+      <div class="card">
+        <h1>Сделать предсказание</h1>
+        <form method="post" action="/web/predict" style="display:grid; gap:12px; margin-top: 8px;">
+          <div class="row">
+            <label for="model_id" class="muted">Модель</label>
+            <select id="model_id" name="model_id" required>
+              {% for m in models %}
+                <option value="{{ m.id }}">{{ m.name }} — {{ "%.2f"|format(m.price or 0) }} кред.</option>
+              {% endfor %}
             </select>
           </div>
-          <input type="number" step="any" name="feature1" placeholder="feature1" required />
-          <input type="number" step="any" name="feature2" placeholder="feature2" required />
-          <input type="number" step="any" name="feature3" placeholder="feature3" required />
-          <div><button type="submit">Отправить</button></div>
+          <div class="row">
+            <label class="muted" for="feature1">feature1</label>
+            <input id="feature1" class="input" type="number" step="any" name="feature1" required />
+          </div>
+          <div class="row">
+            <label class="muted" for="feature2">feature2</label>
+            <input id="feature2" class="input" type="number" step="any" name="feature2" required />
+          </div>
+          <div class="row">
+            <label class="muted" for="feature3">feature3</label>
+            <input id="feature3" class="input" type="number" step="any" name="feature3" required />
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px; align-items:center;">
+            {% if result and result.prediction %}
+              <span class="result">Результат: <strong>{{ result.prediction }}</strong></span>
+            {% elif result and result["prediction"] %}
+              <span class="result">Результат: <strong>{{ result["prediction"] }}</strong></span>
+            {% endif %}
+            <button class="btn" type="submit">Сделать предсказание</button>
+          </div>
         </form>
-
-        <div style="margin-top: 16px;">
-          <form method="post" action="/web/predict-form">
-            <label><b>Данные (JSON):</b></label>
-            <textarea name="records_json" rows="6" style="width: 100%; padding: 8px;" required>
-[
-  {"feature1": 1.0, "feature2": 2.0},
-  {"feature1": "oops", "feature2": 3.0}
-]
-            </textarea>
-            <small>Объект или массив объектов; валидной считается запись, где все значения — числа. Невалидные записи будут показаны ниже.</small>
-            <div style="margin-top: 8px;">
-              <label>Модель (для JSON):</label>
-              <select name="model_id" required style="padding: 6px;">
-                {% if models and models|length > 0 %}
-                  {% for m in models %}
-                    <option value="{{ m.id }}">#{{ m.id }} — {{ m.name or 'Model' }} ({{ m.price or 1 }} кредитов)</option>
-                  {% endfor %}
-                {% else %}
-                  <option value="1">#1 — Default (1 кредит)</option>
-                {% endif %}
-              </select>
-              <button type="submit" style="margin-left: 8px;">Отправить JSON</button>
-            </div>
-          </form>
-        </div>
-
-        {% if result %}
-          <div style="margin-top: 12px; padding: 10px; border-left: 4px solid #6c6;">
-            <div><b>Результат:</b>
-              {% if result.charged %}
-                предсказание выполнено, списано {{ "%.2f"|format(result.cost) }} кредитов.
-              {% else %}
-                валидных данных не найдено — списаний нет.
-              {% endif %}
-            </div>
-            <div>Создано записей предсказаний: {{ result.created_count }}</div>
-          </div>
+        {% if invalid_records %}
+          <div class="muted" style="margin-top:10px;">Невалидные данные были пропущены:</div>
+          <pre class="result" style="white-space: pre-wrap;">{{ invalid_records | tojson(indent=2) }}</pre>
         {% endif %}
+      </div>
 
-        {% if invalid_records and invalid_records|length > 0 %}
-          <div style="margin-top: 12px; padding: 10px; border-left: 4px solid #c66;">
-            <b>Невалидные записи (не были обработаны):</b>
-            <pre style="white-space: pre-wrap;">{{ invalid_records | tojson(indent=2) }}</pre>
-          </div>
-        {% endif %}
-      </section>
-
-      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
-        <h3>История предсказаний</h3>
-        {% if predictions and predictions|length > 0 %}
-          <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-            <thead style="background: #f5f5f5;">
+      <div class="card">
+        <h1>Доступные модели</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Модель</th>
+              <th>Цена, кред.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in models %}
               <tr>
-                <th>ID</th>
-                <th>Модель</th>
-                <th>Предсказание</th>
-                <th>Списано (кред.)</th>
-                <th>Время</th>
+                <td>{{ m.id }}</td>
+                <td>{{ m.name }}</td>
+                <td>{{ "%.2f"|format(m.price or 0) }}</td>
               </tr>
-            </thead>
-            <tbody>
+            {% else %}
+              <tr><td colspan="3" class="muted">Нет доступных моделей</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid grid-2">
+      <div class="card">
+        <h1>История транзакций</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Тип</th>
+              <th>Сумма</th>
+              <th>Создано</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in transactions %}
+              <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.type }}</td>
+                <td>{{ "%.2f"|format(t.amount or 0) }}</td>
+                <td>{{ t.created_at }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="muted">Транзакций пока нет</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h1>История предсказаний</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Модель</th>
+              <th>Предсказание</th>
+              <th>Стоимость</th>
+              <th>Создано</th>
+            </tr>
+          </thead>
+          <tbody>
             {% for p in predictions %}
               <tr>
                 <td>{{ p.id }}</td>
                 <td>{{ p.model_id }}</td>
                 <td>{{ p.prediction }}</td>
-                <td>{{ "%.2f"|format(p.cost or 0.0) }}</td>
+                <td>{{ "%.2f"|format(p.cost or 0) }}</td>
                 <td>{{ p.created_at }}</td>
               </tr>
+            {% else %}
+              <tr><td colspan="5" class="muted">Предсказаний пока нет</td></tr>
             {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <p>Пока нет предсказаний.</p>
-        {% endif %}
-      </section>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-      <section style="margin: 16px 0; padding: 16px; border: 1px solid #eee; border-radius: 8px;">
-        <h3>История транзакций</h3>
-        {% if transactions and transactions|length > 0 %}
-          <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-            <thead style="background: #f5f5f5;">
-              <tr>
-                <th>ID</th>
-                <th>Тип</th>
-                <th>Сумма</th>
-                <th>Время</th>
-              </tr>
-            </thead>
-            <tbody>
-            {% for t in transactions %}
-              <tr>
-                <td>{{ t.id }}</td>
-                <td>{{ t.type }}</td>
-                <td>{% if t.type == 'withdraw' %}-{% endif %}{{ "%.2f"|format(t.amount) }}</td>
-                <td>{{ t.created_at }}</td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <p>Пока нет транзакций.</p>
-        {% endif %}
-      </section>
-    </div>
-  </body>
+  </div>
+</body>
 </html>
