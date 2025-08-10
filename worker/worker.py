@@ -1,76 +1,97 @@
 import json
 import os
-import pickle
 import time
+from typing import Tuple, List, Dict
 
 import pika
 from sqlalchemy.orm import Session
 
 from shared.db import SessionLocal
 from shared.models.prediction import Prediction
+from shared.models.user import User
+from shared.models.transaction import Transaction
 
 RABBIT_HOST = os.getenv("RABBIT_HOST", "rabbitmq")
 QUEUE_NAME = os.getenv("QUEUE_NAME", "ml_tasks")
-MODEL_PATH = os.getenv("MODEL_PATH", "shared/ml_model/heart_failure.pkl")
 
-def load_model():
-    with open(MODEL_PATH, "rb") as f:
-        return pickle.load(f)
 
-def handle_task(ch, method, properties, body, model):
-    try:
-        data = json.loads(body.decode("utf-8"))
-        user_id = data["user_id"]
-        model_id = data["model_id"]
-        input_data = data["input_data"]
+def split_valid_invalid(records: Dict) -> Tuple[Dict, Dict]:
+    """Простейшая валидация: числовые значения -> валидно, остальное -> невалидно"""
+    valid, invalid = {}, {}
+    for k, v in records.items():
+        if isinstance(v, (int, float)):
+            valid[k] = v
+        else:
+            invalid[k] = v
+    return valid, invalid
 
+
+def do_predict(valid_input: Dict) -> str:
+    # Для демо — константа; тут можно загрузить pickle и дернуть model.predict
+    return "0.42"
+
+
+def handle_task(db: Session, task: dict):
+    user_id = int(task["user_id"])
+    model_id = int(task["model_id"])
+    input_data = task["input_data"]
+    price = float(task["price"])
+
+    user = db.query(User).filter(User.id == user_id).with_for_update(read=False).first()
+    if not user:
+        return
+
+    if user.balance < price:
+        # недостаточно средств — просто игнорируем (в реале можно отправить событие пользователю)
+        return
+
+    valid, invalid = split_valid_invalid(input_data)
+    if not valid:
+        # ничего валидного — не списываем
+        return
+
+    pred_value = do_predict(valid)
+    # списываем средства
+    user.balance -= price
+    db.add(Transaction(user_id=user_id, amount=price, type="withdraw"))
+    db.add(Prediction(user_id=user_id, model_id=model_id, prediction=pred_value, cost=price))
+    db.commit()
+
+
+def main():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST))
+    channel = connection.channel()
+    channel.queue_declare(queue=QUEUE_NAME, durable=True)
+
+    def callback(ch, method, properties, body):
         try:
-            pred_value = float(model.predict([input_data])[0])
+            task = json.loads(body.decode("utf-8"))
         except Exception:
-            # fallback
-            pred_value = 0.0
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
 
-        # Сохраняем предсказание
-        db: Session = SessionLocal()
+        db = SessionLocal()
         try:
-            pred_row = Prediction(
-                user_id=user_id,
-                model_id=model_id,
-                prediction=str(pred_value),
-            )
-            db.add(pred_row)
-            db.commit()
+            handle_task(db, task)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        except Exception:
+            # при ошибке не теряем сообщение
+            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
         finally:
             db.close()
 
-    except Exception as e:
-        print("[!] Error while processing task:", e)
-
-def main():
-    print("[*] Loading ML model...")
-    model = load_model()
-
-    print("[*] Connecting to RabbitMQ...")
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_HOST))
-    channel = connection.channel()
-    channel.queue_declare(queue=QUEUE_NAME, durable=True)
     channel.basic_qos(prefetch_count=1)
-
-    def callback(ch, method, properties, body):
-        handle_task(ch, method, properties, body, model)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-
     channel.basic_consume(queue=QUEUE_NAME, on_message_callback=callback, auto_ack=False)
     print("[*] Worker started. Waiting for messages...")
     try:
         channel.start_consuming()
     except KeyboardInterrupt:
-        print("Stopping...")
         try:
             channel.stop_consuming()
         except Exception:
             pass
         connection.close()
+
 
 if __name__ == "__main__":
     time.sleep(int(os.getenv("WORKER_STARTUP_DELAY", "2")))

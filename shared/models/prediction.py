@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, func
 from shared.db import Base
 
 class Prediction(Base):
@@ -8,4 +8,5 @@ class Prediction(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     model_id = Column(Integer, nullable=False)
     prediction = Column(String, nullable=False)
+    cost = Column(Float, nullable=False, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

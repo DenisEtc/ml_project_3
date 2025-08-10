@@ -1,12 +1,21 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="col-md-4 offset-md-4">
-    <h3 class="mb-3">Register</h3>
-    <form method="post">
-        <input type="text" name="username" class="form-control mb-3" placeholder="Username" required>
-        <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
-        <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
-        <button class="btn btn-success w-100">Register</button>
-    </form>
-</div>
-{% endblock %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Регистрация</title>
+  </head>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto;">
+    <div style="max-width: 480px; margin: 48px auto;">
+      <h2>Регистрация</h2>
+      <form method="post" action="/web/register" style="display: grid; gap: 8px;">
+        <input name="username" placeholder="Логин" required />
+        <input name="email" type="email" placeholder="Email" required />
+        <input name="password" type="password" placeholder="Пароль" required />
+        <button type="submit">Создать аккаунт</button>
+      </form>
+      <p style="margin-top: 12px;">
+        Уже есть аккаунт? <a href="/web/login">Войти</a>
+      </p>
+    </div>
+  </body>
+</html>
