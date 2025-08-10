@@ -5,92 +5,35 @@
   <title>Личный кабинет — ML Service</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --bg: #0f172a;        /* slate-900 */
-      --panel: #111827;     /* gray-900 */
-      --muted: #94a3b8;     /* slate-400 */
-      --text: #e5e7eb;      /* gray-200 */
-      --accent: #2563eb;    /* blue-600 */
-      --accent-2: #1e40af;  /* blue-800 */
-      --danger-bg: #fee2e2; /* red-100 */
-      --danger-tx: #991b1b; /* red-800 */
-      --success-bg: #dcfce7;/* green-100 */
-      --success-tx: #166534;/* green-800 */
-      --border: #334155;    /* slate-700 */
-    }
+    :root { --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#2563eb; --accent-2:#1e40af; --danger-bg:#fee2e2; --danger-tx:#991b1b; --success-bg:#dcfce7; --success-tx:#166534; --border:#334155; }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color: var(--text);
-      background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
-      min-height: 100vh;
-    }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; color:var(--text); background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%); min-height:100vh; }
     a { color: var(--muted); text-decoration: none; }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 24px 16px 64px;
-    }
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 24px;
-    }
-    .brand { font-weight: 700; letter-spacing: .3px; }
-    .card {
-      background: rgba(17,24,39,.7);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-    }
-    .grid { display: grid; gap: 16px; }
+    .container { max-width:1100px; margin:0 auto; padding:24px 16px 64px; }
+    header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .brand { font-weight:700; letter-spacing:.3px; }
+    .card { background: rgba(17,24,39,.7); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .grid { display:grid; gap:16px; }
     .grid-2 { grid-template-columns: 1fr 1fr; }
-    .grid-3 { grid-template-columns: repeat(3, 1fr); }
-    @media (max-width: 920px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-    h1,h2,h3 { margin: 0 0 12px; }
-    h1 { font-size: 22px; }
-    h2 { font-size: 18px; color: var(--muted); }
-    .balance {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px;
-    }
-    .badge {
-      background: rgba(37,99,235,.12);
-      border: 1px solid rgba(37,99,235,.35);
-      color: #bfdbfe; padding: 6px 10px; border-radius: 999px; font-weight: 600;
-    }
-    .btn {
-      background: var(--accent);
-      color: white; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer;
-      font-weight: 600;
-    }
-    .btn:hover { background: var(--accent-2); }
-    .input, select {
-      width: 100%; padding: 10px 12px; border-radius: 10px; background: #0b1020; color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; }
-    .alerts { margin-bottom: 16px; }
-    .alert {
-      border-radius: 12px; padding: 12px 14px; border: 1px solid;
-      background: rgba(0,0,0,.2);
-    }
-    .alert-danger { background: var(--danger-bg); color: var(--danger-tx); border-color: #fecaca; }
-    .alert-success { background: var(--success-bg); color: var(--success-tx); border-color: #bbf7d0; }
-    table {
-      width: 100%; border-collapse: collapse; font-size: 14px;
-      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-    }
-    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
-    th { text-align: left; color: var(--muted); background: rgba(2,6,23,.5); }
-    tr:last-child td { border-bottom: 0; }
+    @media (max-width:920px) { .grid-2 { grid-template-columns:1fr; } }
+    h1,h2,h3 { margin:0 0 12px; }
+    .balance { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .badge { background: rgba(37,99,235,.12); border:1px solid rgba(37,99,235,.35); color:#bfdbfe; padding:6px 10px; border-radius:999px; font-weight:600; }
+    .btn { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+    .btn:hover { background:var(--accent-2); }
+    .input, select { width:100%; padding:10px 12px; border-radius:10px; background:#0b1020; color:var(--text); border:1px solid var(--border); }
+    .row { display:grid; grid-template-columns:160px 1fr; gap:12px; align-items:center; }
+    .alerts { margin-bottom:16px; }
+    .alert { border-radius:12px; padding:12px 14px; border:1px solid; background: rgba(0,0,0,.2); }
+    .alert-danger { background: var(--danger-bg); color: var(--danger-tx); border-color:#fecaca; }
+    .alert-success { background: var(--success-bg); color: var(--success-tx); border-color:#bbf7d0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    th, td { padding:10px 12px; border-bottom:1px solid var(--border); }
+    th { text-align:left; color:var(--muted); background: rgba(2,6,23,.5); }
+    tr:last-child td { border-bottom:0; }
     .muted { color: var(--muted); }
-    .result {
-      display: inline-block; padding: 8px 12px; border-radius: 12px;
-      border: 1px dashed rgba(148,163,184,.4);
-      background: rgba(2,6,23,.4);
-      margin-top: 6px;
-    }
+    .result { display:inline-block; padding:8px 12px; border-radius:12px; border:1px dashed rgba(148,163,184,.4); background: rgba(2,6,23,.4); margin-top:6px;}
+    .note { font-size: 13px; color: var(--muted); margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -100,7 +43,7 @@
       <div class="muted">Пользователь: {{ user.username }}</div>
     </header>
 
-    <div class="alerts">
+    <div id="alerts" class="alerts">
       {% if error_message %}
         <div class="alert alert-danger">{{ error_message }}</div>
       {% endif %}
@@ -115,8 +58,8 @@
         <div class="balance">
           <div>
             <div class="muted">Текущий баланс</div>
-            <div style="font-size: 28px; font-weight: 800; margin-top: 4px;">
-              {{ "%.2f"|format(user.balance or 0) }} <span class="muted" style="font-size:14px;">кредитов</span>
+            <div style="font-size:28px; font-weight:800; margin-top:4px;">
+              <span id="balance">{{ "%.2f"|format(user.balance or 0) }}</span> <span class="muted" style="font-size:14px;">кредитов</span>
             </div>
           </div>
           <div><span class="badge">Аккаунт</span></div>
@@ -125,7 +68,7 @@
 
       <div class="card">
         <h1>Пополнение</h1>
-        <form method="post" action="/web/deposit" style="display: grid; gap: 12px; margin-top: 8px;">
+        <form method="post" action="/web/deposit" style="display:grid; gap:12px; margin-top:8px;">
           <div class="row">
             <label for="amount" class="muted">Сумма пополнения</label>
             <input id="amount" class="input" type="number" name="amount" step="0.01" min="0.01" placeholder="Например, 10" required />
@@ -140,7 +83,7 @@
     <section class="grid grid-2" style="margin-bottom: 16px;">
       <div class="card">
         <h1>Сделать предсказание</h1>
-        <form method="post" action="/web/predict" style="display:grid; gap:12px; margin-top: 8px;">
+        <form id="predict-form" method="post" action="/web/predict?ajax=1" style="display:grid; gap:12px; margin-top:8px;">
           <div class="row">
             <label for="model_id" class="muted">Модель</label>
             <select id="model_id" name="model_id" required>
@@ -162,37 +105,22 @@
             <input id="feature3" class="input" type="number" step="any" name="feature3" required />
           </div>
           <div style="display:flex; justify-content:flex-end; gap:8px; align-items:center;">
-            {% if result and result.prediction %}
-              <span class="result">Результат: <strong>{{ result.prediction }}</strong></span>
-            {% elif result and result["prediction"] %}
-              <span class="result">Результат: <strong>{{ result["prediction"] }}</strong></span>
-            {% endif %}
-            <button class="btn" type="submit">Сделать предсказание</button>
+            <span id="result-box" class="result" style="display:none;"></span>
+            <button id="predict-btn" class="btn" type="submit">Сделать предсказание</button>
           </div>
+          <div id="predict-note" class="note"></div>
         </form>
-        {% if invalid_records %}
-          <div class="muted" style="margin-top:10px;">Невалидные данные были пропущены:</div>
-          <pre class="result" style="white-space: pre-wrap;">{{ invalid_records | tojson(indent=2) }}</pre>
-        {% endif %}
       </div>
 
       <div class="card">
         <h1>Доступные модели</h1>
         <table>
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>Модель</th>
-              <th>Цена, кред.</th>
-            </tr>
+            <tr><th>ID</th><th>Модель</th><th>Цена, кред.</th></tr>
           </thead>
           <tbody>
             {% for m in models %}
-              <tr>
-                <td>{{ m.id }}</td>
-                <td>{{ m.name }}</td>
-                <td>{{ "%.2f"|format(m.price or 0) }}</td>
-              </tr>
+              <tr><td>{{ m.id }}</td><td>{{ m.name }}</td><td>{{ "%.2f"|format(m.price or 0) }}</td></tr>
             {% else %}
               <tr><td colspan="3" class="muted">Нет доступных моделей</td></tr>
             {% endfor %}
@@ -206,21 +134,11 @@
         <h1>История транзакций</h1>
         <table>
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>Тип</th>
-              <th>Сумма</th>
-              <th>Создано</th>
-            </tr>
+            <tr><th>ID</th><th>Тип</th><th>Сумма</th><th>Создано</th></tr>
           </thead>
-          <tbody>
+          <tbody id="tx-body">
             {% for t in transactions %}
-              <tr>
-                <td>{{ t.id }}</td>
-                <td>{{ t.type }}</td>
-                <td>{{ "%.2f"|format(t.amount or 0) }}</td>
-                <td>{{ t.created_at }}</td>
-              </tr>
+              <tr><td>{{ t.id }}</td><td>{{ t.type }}</td><td>{{ "%.2f"|format(t.amount or 0) }}</td><td>{{ t.created_at }}</td></tr>
             {% else %}
               <tr><td colspan="4" class="muted">Транзакций пока нет</td></tr>
             {% endfor %}
@@ -232,23 +150,11 @@
         <h1>История предсказаний</h1>
         <table>
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>Модель</th>
-              <th>Предсказание</th>
-              <th>Стоимость</th>
-              <th>Создано</th>
-            </tr>
+            <tr><th>ID</th><th>Модель</th><th>Предсказание</th><th>Стоимость</th><th>Создано</th></tr>
           </thead>
-          <tbody>
+          <tbody id="pred-body">
             {% for p in predictions %}
-              <tr>
-                <td>{{ p.id }}</td>
-                <td>{{ p.model_id }}</td>
-                <td>{{ p.prediction }}</td>
-                <td>{{ "%.2f"|format(p.cost or 0) }}</td>
-                <td>{{ p.created_at }}</td>
-              </tr>
+              <tr><td>{{ p.id }}</td><td>{{ p.model_id }}</td><td>{{ p.prediction }}</td><td>{{ "%.2f"|format(p.cost or 0) }}</td><td>{{ p.created_at }}</td></tr>
             {% else %}
               <tr><td colspan="5" class="muted">Предсказаний пока нет</td></tr>
             {% endfor %}
@@ -256,7 +162,144 @@
         </table>
       </div>
     </section>
-
   </div>
+
+  <script>
+    (function () {
+      const alerts = document.getElementById('alerts');
+      const balanceEl = document.getElementById('balance');
+      const predBody = document.getElementById('pred-body');
+      const txBody = document.getElementById('tx-body');
+      const form = document.getElementById('predict-form');
+      const btn = document.getElementById('predict-btn');
+      const resultBox = document.getElementById('result-box');
+      const noteEl = document.getElementById('predict-note');
+
+      // Автоудаление СТАТИЧЕСКИХ success‑сообщений (например, после пополнения баланса)
+      document.addEventListener('DOMContentLoaded', () => {
+        const staticSuccess = document.querySelectorAll('.alert.alert-success');
+        staticSuccess.forEach(el => {
+          setTimeout(() => el.remove(), 5000); // убираем через 5 секунд
+        });
+      });
+
+      let polling = null;
+      let lastPredId = (function() {
+        const first = predBody.querySelector('tr td');
+        return first ? parseInt(first.textContent, 10) || 0 : 0;
+      })();
+      let lastTxId = (function() {
+        const first = txBody.querySelector('tr td');
+        return first ? parseInt(first.textContent, 10) || 0 : 0;
+      })();
+
+      function showInfo(msg) {
+        const el = document.createElement('div');
+        el.className = 'alert alert-success';
+        el.textContent = msg;
+        alerts.prepend(el);
+        setTimeout(() => el.remove(), 5000);
+      }
+      function showError(msg) {
+        const el = document.createElement('div');
+        el.className = 'alert alert-danger';
+        el.textContent = msg;
+        alerts.prepend(el);
+        setTimeout(() => el.remove(), 6000);
+      }
+
+      async function pollOnce() {
+        try {
+          const res = await fetch('/web/poll', { cache: 'no-store' });
+          if (!res.ok) return;
+          const j = await res.json();
+          if (!j.authenticated) return;
+
+          if (j.last_prediction && j.last_prediction.id && j.last_prediction.id !== lastPredId) {
+            const p = j.last_prediction;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${p.id}</td><td>${p.model_id}</td><td>${p.prediction}</td><td>${(p.cost ?? 0).toFixed(2)}</td><td>${p.created_at}</td>`;
+            predBody.prepend(tr);
+            lastPredId = p.id;
+          }
+
+          if (j.last_transaction && j.last_transaction.id && j.last_transaction.id !== lastTxId) {
+            const t = j.last_transaction;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${t.id}</td><td>${t.type}</td><td>${(t.amount ?? 0).toFixed(2)}</td><td>${t.created_at}</td>`;
+            txBody.prepend(tr);
+            lastTxId = t.id;
+          }
+
+          if (typeof j.balance === 'number') {
+            balanceEl.textContent = j.balance.toFixed(2);
+          }
+        } catch (_) { /* ignore */ }
+      }
+
+      function startPolling() {
+        if (polling) return;
+        polling = setInterval(pollOnce, 2000);
+      }
+
+      function stopPolling() {
+        if (polling) {
+          clearInterval(polling);
+          polling = null;
+        }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        resultBox.style.display = 'none';
+        noteEl.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Отправляем...';
+
+        try {
+          const formData = new FormData(form);
+          const res = await fetch(form.action, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData
+          });
+
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            const msg = j.detail || 'Ошибка при отправке';
+            showError(msg);
+            btn.disabled = false;
+            btn.textContent = 'Сделать предсказание';
+            return;
+          }
+
+          const data = await res.json();
+
+          if (data.mode === 'test' && data.status === 'ok') {
+            resultBox.textContent = `Результат: ${data.prediction}`;
+            resultBox.style.display = 'inline-block';
+            if (typeof data.balance === 'number') balanceEl.textContent = data.balance.toFixed(2);
+            showInfo('Предсказание выполнено (TEST_MODE)');
+            btn.disabled = false;
+            btn.textContent = 'Сделать предсказание';
+            await pollOnce();
+            return;
+          }
+
+          showInfo('Задача отправлена на обработку');
+          noteEl.textContent = 'Ожидаем результат...';
+          btn.disabled = false;
+          btn.textContent = 'Сделать предсказание';
+          startPolling();
+          setTimeout(() => { stopPolling(); noteEl.textContent = ''; }, 20000);
+
+        } catch (err) {
+          showError('Сетевая ошибка');
+          btn.disabled = false;
+          btn.textContent = 'Сделать предсказание';
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
