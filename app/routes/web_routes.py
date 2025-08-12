@@ -107,6 +107,13 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     resp.set_cookie("access_token", token, httponly=True, samesite="Lax")
     return resp
 
+@web_router.get("/logout")
+def logout():
+    """Удаляем cookie авторизации и отправляем на форму входа."""
+    resp = RedirectResponse(url="/web/login", status_code=status.HTTP_302_FOUND)
+    resp.delete_cookie("access_token")
+    return resp
+
 @web_router.get("/dashboard")
 def dashboard(request: Request, db: Session = Depends(get_db)):
     user = current_user_by_cookie(db, request)

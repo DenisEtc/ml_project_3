@@ -21,6 +21,8 @@
     .badge { background: rgba(37,99,235,.12); border:1px solid rgba(37,99,235,.35); color:#bfdbfe; padding:6px 10px; border-radius:999px; font-weight:600; }
     .btn { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
     .btn:hover { background:var(--accent-2); }
+    .btn-ghost { background:transparent; color:#bfdbfe; border:1px solid var(--border); padding:8px 12px; border-radius:10px; }
+    .btn-ghost:hover { background:#0b1020; }
     .input, select { width:100%; padding:10px 12px; border-radius:10px; background:#0b1020; color:var(--text); border:1px solid var(--border); }
     .row { display:grid; grid-template-columns:160px 1fr; gap:12px; align-items:center; }
     .alerts { margin-bottom:16px; }
@@ -34,13 +36,18 @@
     .muted { color: var(--muted); }
     .result { display:inline-block; padding:8px 12px; border-radius:12px; border:1px dashed rgba(148,163,184,.4); background: rgba(2,6,23,.4); margin-top:6px;}
     .note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .header-right { display:flex; gap:12px; align-items:center; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div class="brand">ML Service · Личный кабинет</div>
-      <div class="muted">Пользователь: {{ user.username }}</div>
+      <div class="header-right">
+        <div class="muted">Пользователь: {{ user.username }}</div>
+        <!-- Кнопка выхода -->
+        <a class="btn-ghost" href="/web/logout">Выйти</a>
+      </div>
     </header>
 
     <div id="alerts" class="alerts">
@@ -244,8 +251,8 @@
 
       function stopPolling() {
         if (polling) {
-          clearInterval(polling);
-          polling = null;
+            clearInterval(polling);
+            polling = null;
         }
       }
 
