@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="85416139-1f6c-4f55-a9f4-497a87620510" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/routes/web_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes/web_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/ml_task_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/ml_task_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/worker/worker.py" beforeDir="false" afterPath="$PROJECT_DIR$/worker/worker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +43,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "feature/final__1",
+    "git-widget-placeholder": "feature/final__2",
     "last_opened_file_path": "/Users/denislavrinenko/Desktop/Studying/ML/3. ml_services/project",
     "settings.editor.selected.configurable": "preferences.pluginManager"
   }
